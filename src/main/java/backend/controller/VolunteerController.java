@@ -5,10 +5,12 @@ import backend.model.Volunteer;
 import backend.repository.VolunteerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,33 +29,54 @@ public class VolunteerController {
     private VolunteerRepository volunteerRepository;
 
     /**
-     * Gibt eine Liste aller registrierten Freiwilligen zurück.
-     * 
+     * Gibt eine Liste aller registrierten Freiwilligen zurück (nur für Admins sichtbar).
+     *
      * @return Eine Liste von {@link Volunteer}-Objekten
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     public List<Volunteer> getAllVolunteers() {
+        LOGGER.info("Alle Volunteers werden abgerufen.");
         return volunteerRepository.findAll();
     }
 
     /**
-     * Erstellt einen neuen Freiwilligen basierend auf den übermittelten Daten.
-     * 
+     * Gibt die Details des eingeloggten Freiwilligen zurück.
+     * Jeder Benutzer kann nur seine eigenen Daten abrufen.
+     *
+     * @param authentication Enthält die Benutzerinformationen des eingeloggten Nutzers.
+     * @return Das entsprechende {@link Volunteer}-Objekt oder eine Fehlermeldung.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> getLoggedInVolunteer(Authentication authentication) {
+        String username = authentication.getName();
+        Volunteer volunteer = volunteerRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Volunteer not found with username: " + username));
+
+        return ResponseEntity.ok(volunteer);
+    }
+
+    /**
+     * Erstellt einen neuen Freiwilligen (nur für Admins erlaubt).
+     *
      * @param volunteer Das {@link Volunteer}-Objekt, das erstellt werden soll
      * @return Das neu erstellte {@link Volunteer}-Objekt
      */
     @PostMapping
-    public Volunteer createVolunteer(@RequestBody Volunteer volunteer) {
-        return volunteerRepository.save(volunteer);
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> createVolunteer(@Valid @RequestBody Volunteer volunteer) {
+        LOGGER.info("Neuer Volunteer wird erstellt: " + volunteer.getUsername());
+        return ResponseEntity.ok(volunteerRepository.save(volunteer));
     }
 
     /**
-     * Gibt die Details eines bestimmten Freiwilligen anhand der ID zurück.
-     * 
+     * Gibt die Details eines bestimmten Freiwilligen anhand der ID zurück (Admin und OK-Mitglieder).
+     *
      * @param id Die ID des Freiwilligen
      * @return Eine {@link ResponseEntity} mit dem {@link Volunteer}-Objekt oder einer Fehlermeldung
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('OK')")
     public ResponseEntity<?> getVolunteerById(@PathVariable String id) {
         try {
             Long volunteerId = Long.parseLong(id);
@@ -73,14 +96,15 @@ public class VolunteerController {
     }
 
     /**
-     * Aktualisiert die Daten eines bestehenden Freiwilligen anhand der ID.
-     * 
+     * Aktualisiert die Daten eines bestehenden Freiwilligen anhand der ID (nur Admins erlaubt).
+     *
      * @param id Die ID des zu aktualisierenden Freiwilligen
      * @param volunteerDetails Ein {@link Volunteer}-Objekt mit den aktualisierten Daten
      * @return Eine {@link ResponseEntity} mit dem aktualisierten {@link Volunteer}-Objekt oder einer Fehlermeldung
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateVolunteer(@PathVariable String id, @RequestBody Volunteer volunteerDetails) {
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> updateVolunteer(@PathVariable String id, @Valid @RequestBody Volunteer volunteerDetails) {
         try {
             Long volunteerId = Long.parseLong(id);
             Volunteer volunteer = volunteerRepository.findById(volunteerId)
@@ -106,12 +130,13 @@ public class VolunteerController {
     }
 
     /**
-     * Löscht einen bestehenden Freiwilligen anhand der ID.
-     * 
+     * Löscht einen bestehenden Freiwilligen anhand der ID (nur für Admins erlaubt).
+     *
      * @param id Die ID des zu löschenden Freiwilligen
      * @return Eine {@link ResponseEntity} mit dem Statuscode 204 (No Content) oder einer Fehlermeldung
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> deleteVolunteer(@PathVariable String id) {
         try {
             Long volunteerId = Long.parseLong(id);
@@ -119,6 +144,7 @@ public class VolunteerController {
                     .orElseThrow(() -> new ResourceNotFoundException("Volunteer not found with id: " + volunteerId));
 
             volunteerRepository.delete(volunteer);
+            LOGGER.info("Volunteer gelöscht mit ID: " + volunteerId);
             return ResponseEntity.noContent().build();
         } catch (NumberFormatException e) {
             LOGGER.log(Level.SEVERE, "Invalid ID format: " + id, e);

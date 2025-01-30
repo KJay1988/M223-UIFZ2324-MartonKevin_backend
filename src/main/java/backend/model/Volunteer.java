@@ -11,19 +11,19 @@ public class Volunteer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "vorname", nullable = false)
     private String vorname;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "geburtsdatum", nullable = false)
     private LocalDate geburtsdatum;
 
     @Column
     private String einsatzort;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "username", unique = true, nullable = false)
     private String username;  // Eindeutiger Benutzername für Login
 
     @Column(nullable = false)

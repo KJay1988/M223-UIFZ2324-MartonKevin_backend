@@ -12,13 +12,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final Logger LOGGER = Logger.getLogger(AuthController.class.getName());
+
     @Autowired
-    private VolunteerRepository volunteerRepository;  // 🔄 Geändert von UserRepository zu VolunteerRepository
+    private VolunteerRepository volunteerRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -29,6 +35,9 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    /**
+     * Registrierung eines neuen Benutzers (Volunteer)
+     */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody Volunteer volunteer) {
         // ✅ Username automatisch generieren
@@ -37,13 +46,12 @@ public class AuthController {
 
         // ❌ Falls der Benutzername bereits existiert, Registrierung abbrechen
         if (volunteerRepository.existsByUsername(volunteer.getUsername())) {
-            return ResponseEntity.badRequest().body("Benutzername existiert bereits!");
+            return ResponseEntity.badRequest().body(Map.of("error", "Benutzername existiert bereits!"));
         }
 
-        // 🔹 Standard-Rolle `HELPER` setzen, falls keine Rolle angegeben wurde
+        // 🔹 Standard-Rolle `HELFER` setzen, falls keine Rolle angegeben wurde
         if (volunteer.getRole() == null) {
-
-            Role defaultRole = roleRepository.findByName(RoleName.valueOf("HELFER"))
+            Role defaultRole = roleRepository.findByName(RoleName.HELFER)
                     .orElseThrow(() -> new RuntimeException("Standardrolle nicht gefunden!"));
             volunteer.setRole(defaultRole);
         }
@@ -52,18 +60,31 @@ public class AuthController {
         volunteer.setPassword(passwordEncoder.encode(volunteer.getPassword()));
         volunteerRepository.save(volunteer);
 
-        return ResponseEntity.ok("Benutzer erfolgreich registriert!");
+        LOGGER.info("Neuer Benutzer registriert: " + volunteer.getUsername() + " mit Rolle: " + volunteer.getRole().getName());
+        return ResponseEntity.ok(Map.of("message", "Benutzer erfolgreich registriert!"));
     }
 
-
-
+    /**
+     * Benutzer-Login mit JWT-Token-Generierung
+     */
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody Volunteer volunteer) {
-        Optional<Volunteer> dbVolunteer = volunteerRepository.findByUsername(volunteer.getUsername());
-        if (dbVolunteer.isPresent() && passwordEncoder.matches(volunteer.getPassword(), dbVolunteer.get().getPassword())) {
-            String token = jwtUtil.generateToken(volunteer.getUsername());
-            return ResponseEntity.ok("{\"token\": \"" + token + "\"}");
+    public ResponseEntity<?> loginUser(@RequestBody Volunteer loginRequest) {
+        Optional<Volunteer> dbVolunteer = volunteerRepository.findByUsername(loginRequest.getUsername());
+
+        if (dbVolunteer.isPresent() && passwordEncoder.matches(loginRequest.getPassword(), dbVolunteer.get().getPassword())) {
+            Volunteer loggedInVolunteer = dbVolunteer.get();
+            String token = jwtUtil.generateToken(loggedInVolunteer.getUsername());
+
+            // ✅ Antwort als JSON-Objekt mit Token & Rolle
+            Map<String, String> response = new HashMap<>();
+            response.put("token", token);
+            response.put("role", loggedInVolunteer.getRole().getName().toString());
+
+            LOGGER.info("Benutzer erfolgreich eingeloggt: " + loggedInVolunteer.getUsername() + " mit Rolle: " + loggedInVolunteer.getRole().getName());
+            return ResponseEntity.ok(response);
         }
-        return ResponseEntity.status(401).body("Ungültige Anmeldeinformationen!");
+
+        LOGGER.log(Level.WARNING, "Fehlgeschlagener Login-Versuch für Benutzer: " + loginRequest.getUsername());
+        return ResponseEntity.status(401).body(Map.of("error", "Ungültige Anmeldeinformationen!"));
     }
 }
