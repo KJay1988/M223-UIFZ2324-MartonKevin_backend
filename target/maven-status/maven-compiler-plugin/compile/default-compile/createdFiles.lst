@@ -1,6 +1,13 @@
 backend\BackendApplication.class
-backend\repository\VolunteerRepository.class
+backend\security\JwtFilter.class
 backend\controller\VolunteerController.class
 backend\exception\ResourceNotFoundException.class
+backend\repository\RoleRepository.class
+backend\model\RoleName.class
+backend\security\SecurityConfig.class
+backend\repository\VolunteerRepository.class
+backend\model\Role.class
+backend\security\JwtUtil.class
 backend\model\Volunteer.class
+backend\controller\AuthController.class
 backend\controller\WebConfig.class

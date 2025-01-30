@@ -1,152 +1,102 @@
 package backend.model;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.time.LocalDate;
 
-/**
- * Repräsentiert einen freiwilligen Helfer in der Anwendung.
- * Diese Klasse wird als Entität in der Datenbank gespeichert und enthält
- * Informationen über den Helfer, einschließlich persönlicher Daten und Einsatzort.
- */
 @Entity
+@Table(name = "volunteer")
 public class Volunteer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Der Vorname des freiwilligen Helfers.
-     */
+    @Column(nullable = false)
     private String vorname;
 
-    /**
-     * Der Nachname des freiwilligen Helfers.
-     */
+    @Column(nullable = false)
     private String name;
 
-    /**
-     * Das Geburtsdatum des freiwilligen Helfers.
-     */
-    private String geburtsdatum;
+    @Column(nullable = false)
+    private LocalDate geburtsdatum;
 
-    /**
-     * Das Geschlecht des freiwilligen Helfers.
-     */
-    private String geschlecht;
-
-    /**
-     * Der Einsatzort des freiwilligen Helfers.
-     */
+    @Column
     private String einsatzort;
 
-    /**
-     * Gibt die ID des freiwilligen Helfers zurück.
-     * 
-     * @return Die ID des freiwilligen Helfers
-     */
-    public Long getId() {
-        return id;
+    @Column(unique = true, nullable = false)
+    private String username;  // Eindeutiger Benutzername für Login
+
+    @Column(nullable = false)
+    private String password;  // Passwort wird in der Datenbank gespeichert (verschlüsselt)
+
+    @ManyToOne
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role; // Jeder Volunteer hat eine Rolle
+
+    // 🔹 Standard-Konstruktor (wichtig für JPA)
+    public Volunteer() {}
+
+    // 🔹 Konstruktor mit allen Attributen (ohne ID, da automatisch generiert)
+    public Volunteer(String vorname, String name, LocalDate geburtsdatum, String einsatzort, String username, String password, Role role) {
+        this.vorname = vorname;
+        this.name = name;
+        this.geburtsdatum = geburtsdatum;
+        this.einsatzort = einsatzort;
+        this.username = username;
+        this.password = password;
+        this.role = role;
     }
 
-    /**
-     * Setzt die ID des freiwilligen Helfers.
-     * 
-     * @param id Die ID des freiwilligen Helfers
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
+    // 🔹 Getter & Setter
 
-    /**
-     * Gibt den Vornamen des freiwilligen Helfers zurück.
-     * 
-     * @return Der Vorname des freiwilligen Helfers
-     */
+    public Long getId() { return id; }
+
     public String getVorname() {
         return vorname;
     }
-
-    /**
-     * Setzt den Vornamen des freiwilligen Helfers.
-     * 
-     * @param vorname Der Vorname des freiwilligen Helfers
-     */
     public void setVorname(String vorname) {
         this.vorname = vorname;
     }
 
-    /**
-     * Gibt den Nachnamen des freiwilligen Helfers zurück.
-     * 
-     * @return Der Nachname des freiwilligen Helfers
-     */
     public String getName() {
         return name;
     }
-
-    /**
-     * Setzt den Nachnamen des freiwilligen Helfers.
-     * 
-     * @param name Der Nachname des freiwilligen Helfers
-     */
     public void setName(String name) {
         this.name = name;
     }
 
-    /**
-     * Gibt das Geburtsdatum des freiwilligen Helfers zurück.
-     * 
-     * @return Das Geburtsdatum des freiwilligen Helfers
-     */
-    public String getGeburtsdatum() {
+    public LocalDate getGeburtsdatum() {
         return geburtsdatum;
     }
-
-    /**
-     * Setzt das Geburtsdatum des freiwilligen Helfers.
-     * 
-     * @param geburtsdatum Das Geburtsdatum des freiwilligen Helfers
-     */
-    public void setGeburtsdatum(String geburtsdatum) {
+    public void setGeburtsdatum(LocalDate geburtsdatum) {
         this.geburtsdatum = geburtsdatum;
     }
 
-    /**
-     * Gibt das Geschlecht des freiwilligen Helfers zurück.
-     * 
-     * @return Das Geschlecht des freiwilligen Helfers
-     */
-    public String getGeschlecht() {
-        return geschlecht;
-    }
-
-    /**
-     * Setzt das Geschlecht des freiwilligen Helfers.
-     * 
-     * @param geschlecht Das Geschlecht des freiwilligen Helfers
-     */
-    public void setGeschlecht(String geschlecht) {
-        this.geschlecht = geschlecht;
-    }
-
-    /**
-     * Gibt den Einsatzort des freiwilligen Helfers zurück.
-     * 
-     * @return Der Einsatzort des freiwilligen Helfers
-     */
     public String getEinsatzort() {
         return einsatzort;
     }
-
-    /**
-     * Setzt den Einsatzort des freiwilligen Helfers.
-     * 
-     * @param einsatzort Der Einsatzort des freiwilligen Helfers
-     */
     public void setEinsatzort(String einsatzort) {
         this.einsatzort = einsatzort;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

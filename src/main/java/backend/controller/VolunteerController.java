@@ -89,7 +89,6 @@ public class VolunteerController {
             volunteer.setVorname(volunteerDetails.getVorname());
             volunteer.setName(volunteerDetails.getName());
             volunteer.setGeburtsdatum(volunteerDetails.getGeburtsdatum());
-            volunteer.setGeschlecht(volunteerDetails.getGeschlecht());
             volunteer.setEinsatzort(volunteerDetails.getEinsatzort());
 
             final Volunteer updatedVolunteer = volunteerRepository.save(volunteer);
